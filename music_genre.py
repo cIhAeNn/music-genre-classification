@@ -72,3 +72,53 @@ def getNeighbors(trainingSet, instance, k):
     neighbors=[distances[x][0] for x in range(k)]
     
     return neighbors
+
+def nearestClass(neighbors):
+    classVote = {}
+    for x in range(len(neighbors)):
+        response = neighbors[x]
+        if response in classVote:
+            classVote[response] += 1
+        else:
+            classVote[response] = 1
+    
+    sorter = sorted(classVote.items(), key=operator.itemgetter(1), reverse=True)
+    
+    return sorter[0][0]
+def getAccuracy(testSet, predictions):
+    correct = 0
+   
+    for x in range(len(testSet)): 
+       if testSet[x][-1] == predictions[x]:
+           correct += 1
+    
+    return 1.0 * correct / len(testSet)
+
+def loadDataset(fileName):
+    dataset = []
+    with open(file=fileName, mode='rb') as f:
+        while True:
+            try:
+                dataset.append(pickle.load(f))
+            except EOFError:
+                break
+    return dataset
+
+def main():
+    dataset = loadDataset('my.dat')
+    results = defaultdict(int)
+    i = 1
+    for folder in os.listdir("./musics/wav_genres/"):
+        results[i] = folder
+        i += 1
+
+    # Read and process the new audio file
+    (rate, sig) = wav.read("__path_to_new_audio_file_")
+    mfcc_feat = mfcc(sig, rate, winlen=0.020, appendEnergy=False)
+    covariance = np.cov(mfcc_feat.transpose())
+    mean_matrix = mfcc_feat.mean(0)
+    feature = (mean_matrix, covariance, 0)  # label is unknown
+
+    # Predict the genre of the new file using KNN
+    predicted_label = nearestClass(getNeighbors(dataset, feature, 5))
+    print("Predicted Genre:", results[predicted_label])
